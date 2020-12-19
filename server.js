@@ -6,7 +6,6 @@ const cors = require('cors');
 require('dotenv').config();
 
 const bodyParser = require("body-parser");
-const { Int32 } = require('mongodb');
 
 /* Create unique ID */
 const IDcreator = require(__dirname + "/createID.js");
@@ -25,21 +24,23 @@ console.log("MongoDB database connection established successfully");
 });
 
 /* Schema */
-const userSchema = new mongoose.Schema({
-  username : String,
-  _id: String
+const exerciseData = new mongoose.Schema({
+  description: {type: String, required: true},
+  duration: {type: Number, required: true},
+  date: {
+    type: Date,
+    default: Date.now
+  }
 });
 
-const exerciseDataSchema = new mongoose.Schema({
-  userId: String,
-  description: String,
-  duration: Number,
-  date: Date
+const userSchema = new mongoose.Schema({
+  username : {type: String, required: true},
+  _id: {type: String, required: true},
+  exercise:[exerciseData]
 });
 
 /* Model */
 const User = mongoose.model("User", userSchema);
-const Exercise = mongoose.model("Exercise", exerciseDataSchema);
 
 
 app.get('/', (req, res) => {
@@ -65,7 +66,7 @@ User.findOne({username:userName},(err,result)=>{
         _id:userID
       });
       user.save();
-      res.json(user);
+      res.json({username:userName, _id:userID});
     }else{
       // show a message "Username already taken"
       res.json("Username already taken");
@@ -75,7 +76,33 @@ User.findOne({username:userName},(err,result)=>{
 
 });
 
-app.post("/api/exercise/log",(req,res)=>{
+app.post("/api/exercise/add",(req,res)=>{
+  // add exercise info
+  const userID = req.body.userId;
+  const userDescription = req.body.description;
+  const userDuration = req.body.duration;
+  const userDate = req.body.date;
+
+  User.findOne({_id:userID},(err,result)=>{
+    if(err) throw err;
+    //check the user is found or not 
+    if(!result){
+      res.json("The user you were looking for was not found, check your user ID");
+    }else{
+      //Add the exercise information
+      result.exercise.push({
+        description : userDescription,
+        duration : userDuration,
+        exerciseDate : userDate
+      });
+      result.save();
+      res.json(result);
+
+    }
+  });
+});
+
+app.get("/api/exercise/log",(req,res)=>{
   // post request for full exercise log
 });
 
