@@ -5,6 +5,9 @@ const app = express();
 const cors = require('cors');
 require('dotenv').config();
 
+const dateFormat = require("dateformat");
+let now = new Date();
+
 const bodyParser = require("body-parser");
 
 /* Create unique ID */
@@ -28,8 +31,8 @@ const exerciseData = new mongoose.Schema({
   description: {type: String, required: true},
   duration: {type: Number, required: true},
   date: {
-    type: Date,
-    default: Date.now
+    type: String,
+    default: dateFormat(now, "dddd, mmmm dd yyyy")
   }
 });
 
@@ -97,7 +100,6 @@ app.post("/api/exercise/add",(req,res)=>{
       });
       result.save();
       res.json(result);
-
     }
   });
 });
