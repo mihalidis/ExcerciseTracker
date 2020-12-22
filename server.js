@@ -32,7 +32,7 @@ const exerciseData = new mongoose.Schema({
   duration: {type: Number, required: true},
   date: {
     type: String,
-    default: dateFormat(now, "dddd, mmmm dd yyyy")
+    default: dateFormat(now, "dddd, mmm dd yyyy")
   }
 });
 
@@ -50,8 +50,11 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/views/index.html')
 });
 
+// Show all users with exercise infos
 app.get("/api/exercise/users",(req,res)=>{
-  res.json(users); 
+  User.find({},(err,results)=>{
+    res.json(results);
+  });
 });
 
 app.post("/api/exercise/new-user", (req,res)=>{
@@ -106,8 +109,86 @@ app.post("/api/exercise/add",(req,res)=>{
 
 app.get("/api/exercise/log",(req,res)=>{
   // post request for full exercise log
+  const userId = req.query.userId;
+  const from = req.query.from;
+  const to = req.query.to;
+  const limit = req.query.limit; 
+
+  User.findOne({_id:userId},(err,foundUser)=>{
+    if(err) throw err;
+    // Exercise Count
+    const count = foundUser.exercise.length;
+    //Check user is exist or not
+    if(!foundUser){
+      res.json("The user you were looking for was not found, check your user ID");
+    }else{
+      // if time interval is blank
+      if(!from && !to){
+        //if limit is blank or not
+        if(!limit){
+          res.json({
+            "_id":userId,
+            "username":foundUser.username,
+            "count":count,
+            "log": foundUser.exercise.map(e => e = {
+              description: e.description,
+              duration: e.duration,
+              date: e.date
+            })
+          });
+        }else{
+          res.json({
+            "_id":userId,
+            "username":foundUser.username,
+            "count":count,
+            "log": foundUser.exercise.map(e => e = {
+              description: e.description,
+              duration: e.duration,
+              date: e.date
+            }).slice(limit)
+          });
+        }
+      // time interval is not blank  
+      }else{
+
+        //if limit is blank or not
+        if(!limit){
+          res.json({
+            "_id":userId,
+            "username":foundUser.username,
+            "from":from,
+          "to":to,
+            "count":count,
+            "log": foundUser.exercise.map(e => e = {
+              description: e.description,
+              duration: e.duration,
+              date: e.date
+            })
+          });
+        }else{
+          res.json({
+            "_id":userId,
+            "username":foundUser.username,
+            "from":from,
+          "to":to,
+            "count":count,
+            "log": foundUser.exercise.map(e => e = {
+              description: e.description,
+              duration: e.duration,
+              date: e.date
+            }).slice(limit)
+          });
+        }
+      }
+    }
+  });
+  
 });
 
 const listener = app.listen(process.env.PORT || 3000, () => {
   console.log('Your app is listening on port ' + listener.address().port)
 })
+
+/*
+{_id:ID, username: USERNAME, from:DATE, to:DATE, count:NUMBERofExercise, log:[EXERCISE LOG]}
+*/
