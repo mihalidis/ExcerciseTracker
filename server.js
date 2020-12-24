@@ -3,10 +3,9 @@ const mongo = require("mongodb");
 const mongoose = require("mongoose");
 const app = express();
 const cors = require('cors');
+const moment = require("moment");
 require('dotenv').config();
 
-const dateFormat = require("dateformat");
-let now = new Date();
 
 const bodyParser = require("body-parser");
 
@@ -31,15 +30,16 @@ const exerciseData = new mongoose.Schema({
   description: {type: String, required: true},
   duration: {type: Number, required: true},
   date: {
-    type: String,
-    default: dateFormat(now, "dddd, mmm dd yyyy")
+    type: Date,
+    default: Date.now()  
   }
+ 
 });
 
 const userSchema = new mongoose.Schema({
   username : {type: String, required: true},
   _id: {type: String, required: true},
-  exercise:[exerciseData]
+  log:[exerciseData]
 });
 
 /* Model */
@@ -84,9 +84,11 @@ User.findOne({username:userName},(err,result)=>{
 
 app.post("/api/exercise/add",(req,res)=>{
   // add exercise info
+let date = req.body.date ? moment(req.body.date) : moment();
+
   const userID = req.body.userId;
   const userDescription = req.body.description;
-  const userDuration = req.body.duration;
+  const userDuration = parseInt(req.body.duration);
   const userDate = req.body.date;
 
   User.findOne({_id:userID},(err,result)=>{
@@ -95,16 +97,17 @@ app.post("/api/exercise/add",(req,res)=>{
     if(!result){
       res.json("The user you were looking for was not found, check your user ID");
     }else{
-      //Add the exercise information
-      result.exercise.push({
+      result.log.push({
         description : userDescription,
         duration : userDuration,
-        exerciseDate : userDate
+        date : userDate || Date.now()
       });
       result.save();
       res.json(result);
+
+      };
     }
-  });
+  );
 });
 
 app.get("/api/exercise/log",(req,res)=>{
@@ -117,7 +120,7 @@ app.get("/api/exercise/log",(req,res)=>{
   User.findOne({_id:userId},(err,foundUser)=>{
     if(err) throw err;
     // Exercise Count
-    const count = foundUser.exercise.length;
+    const count = foundUser.log.length;
     //Check user is exist or not
     if(!foundUser){
       res.json("The user you were looking for was not found, check your user ID");
@@ -130,7 +133,7 @@ app.get("/api/exercise/log",(req,res)=>{
             "_id":userId,
             "username":foundUser.username,
             "count":count,
-            "log": foundUser.exercise.map(e => e = {
+            "log": foundUser.log.map(e => e = {
               description: e.description,
               duration: e.duration,
               date: e.date
@@ -141,7 +144,7 @@ app.get("/api/exercise/log",(req,res)=>{
             "_id":userId,
             "username":foundUser.username,
             "count":count,
-            "log": foundUser.exercise.map(e => e = {
+            "log": foundUser.log.map(e => e = {
               description: e.description,
               duration: e.duration,
               date: e.date
@@ -159,7 +162,7 @@ app.get("/api/exercise/log",(req,res)=>{
             "from":from,
           "to":to,
             "count":count,
-            "log": foundUser.exercise.map(e => e = {
+            "log": foundUser.log.map(e => e = {
               description: e.description,
               duration: e.duration,
               date: e.date
@@ -172,7 +175,7 @@ app.get("/api/exercise/log",(req,res)=>{
             "from":from,
           "to":to,
             "count":count,
-            "log": foundUser.exercise.map(e => e = {
+            "log": foundUser.log.map(e => e = {
               description: e.description,
               duration: e.duration,
               date: e.date
@@ -191,4 +194,7 @@ const listener = app.listen(process.env.PORT || 3000, () => {
 
 /*
 {_id:ID, username: USERNAME, from:DATE, to:DATE, count:NUMBERofExercise, log:[EXERCISE LOG]}
+
+Not: Try to split exercise and user schema
+
 */
