@@ -93,11 +93,11 @@ app.get('/api/users/:_id/logs', (req,res)=>{
 	const user_id = req.params._id;
 
 	const from_date = req.query.from;
-	const to_date = req.query.from;
+	const to_date = req.query.to;
 	const limit = req.query.limit;
 
-	let start_date =  moment(from_date).format("YYYY-MM-DD");
-	let end_date = moment(to_date).format("YYYY-MM-DD");
+	let start_date = new Date(from_date);
+	let end_date = new Date(to_date);
 
 	User.findOne({_id: user_id}, (err,result)=>{
 		if(!result) {
@@ -108,9 +108,11 @@ app.get('/api/users/:_id/logs', (req,res)=>{
 					let date = new Date(item.date);
 					let itemdate = moment(date).format("YYYY-MM-DD");
 					//todo: bug here -> moment(itemdate).isBetween(start_date,end_date)
-					return moment(itemdate).isBetween('2021-01-11','2021-02-13');
+					return moment(itemdate).isBetween(start_date, end_date);
 				});
-				console.log(filteredItems);
+				if(limit) {
+					filteredItems.splice(limit,filteredItems.length)
+				}
 				res.json(
 					{
 						username: result.username,
