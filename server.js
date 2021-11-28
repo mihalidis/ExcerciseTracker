@@ -84,7 +84,7 @@ app.post('/api/users/:_id/exercises', (req, res)=>{
 			);
 		}
 	});
-	
+
 });
 
 /* Retrive user log */
@@ -107,17 +107,25 @@ app.get('/api/users/:_id/logs', (req,res)=>{
 				let filteredItems = result.log.filter((item) => {
 					let date = new Date(item.date);
 					let itemdate = moment(date).format("YYYY-MM-DD");
-					//todo: bug here -> moment(itemdate).isBetween(start_date,end_date)
 					return moment(itemdate).isBetween(start_date, end_date);
 				});
+
 				if(limit) {
 					filteredItems.splice(limit,filteredItems.length)
 				}
+
+				//reformat filtered items for remove id from object
+				filteredItems = filteredItems.map(item => ({
+					description: item.description,
+					duration: item.duration,
+					date: item.date
+				}));
+
+				console.log(filteredItems);
 				res.json(
 					{
 						username: result.username,
 						count: result.log.length,
-						_id: result._id,
 						log: filteredItems,
 					}
 				);
@@ -126,7 +134,6 @@ app.get('/api/users/:_id/logs', (req,res)=>{
 					{
 						username: result.username,
 						count: result.log.length,
-						_id: result._id,
 						log: result.log,
 					}
 				);
@@ -135,22 +142,18 @@ app.get('/api/users/:_id/logs', (req,res)=>{
 	});
 });
 
-/* List all users */
+// List all users
 app.get('/api/users', (req, res) => {
-  User.find({}, (err,users)=>{
+	User.find({}, (err,users)=>{
 		if (err) throw err;
 		res.json(users);
 	});
 });
 
 app.get('/', (req, res) => {
-  res.sendFile(__dirname + '/views/index.html')
+	res.sendFile(__dirname + '/views/index.html')
 });
 
-
-
-
-
 const listener = app.listen(process.env.PORT || 3000, () => {
-  console.log('Your app is listening on port ' + listener.address().port)
+	console.log('Your app is listening on port ' + listener.address().port)
 })
