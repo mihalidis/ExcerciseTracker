@@ -57,6 +57,7 @@ app.post('/api/users', (req, res)=>{
 /* create user log data */
 app.post('/api/users/:_id/exercises', (req, res)=>{
 	let date = req.body.date ? moment(req.body.date).format("ddd MMM DD YYYY") : moment().format("ddd MMM DD YYYY");
+	//let date = req.body.date ? new Date(req.body.date).toDateString() : new Date().toISOString().substring(0,10);;
 
 	const user_id = req.params._id;
 	const user_desc = req.body.description;
@@ -96,48 +97,32 @@ app.get('/api/users/:_id/logs', (req,res)=>{
 	const to_date = req.query.to;
 	const limit = req.query.limit;
 
-	let start_date = new Date(from_date);
-	let end_date = new Date(to_date);
-
 	User.findOne({_id: user_id}, (err,result)=>{
 		if(!result) {
 			res.json("The user you were looking for was not found, check your user ID");
 		} else {
-			if(from_date && to_date) {
-				let filteredItems = result.log.filter((item) => {
-					let date = new Date(item.date);
-					let itemdate = moment(date).format("YYYY-MM-DD");
-					return moment(itemdate).isBetween(start_date, end_date);
-				});
-
-				if(limit) {
-					filteredItems.splice(limit,filteredItems.length)
-				}
-
-				//reformat filtered items for remove id from object
-				filteredItems = filteredItems.map(item => ({
-					description: item.description,
-					duration: item.duration,
-					date: item.date
-				}));
-
-				console.log(filteredItems);
-				res.json(
-					{
-						username: result.username,
-						count: result.log.length,
-						log: filteredItems,
-					}
-				);
-			} else {
-				res.json(
-					{
-						username: result.username,
-						count: result.log.length,
-						log: result.log,
-					}
-				);
+			if(limit) {
+				//result.log = result.log.slice(0, limit);
+				result.log = result.log.splice(limit,result.log.length);
 			}
+
+			// from / to date
+			if(from_date || to_date) {
+				let start_date = from_date ? new Date(from_date) : new Date(0);
+				let end_date = to_date ? new Date(to_date) : new Date();
+
+				result.log = result.log.filter((item) => {
+					let exerciseDate = new Date(item.date);
+
+					return exerciseDate.getTime() >= start_date.getTime() && exerciseDate.getTime() <= start_date.getTime();
+				});
+			}
+
+			res.json({
+				username: result.username,
+				count: result.log.length,
+				log: result.log
+			});
 		};
 	});
 });
