@@ -114,7 +114,7 @@ app.get('/api/users/:_id/logs', (req,res)=>{
 				result.log = result.log.filter((item) => {
 					let exerciseDate = new Date(item.date);
 
-					return exerciseDate.getTime() >= start_date.getTime() && exerciseDate.getTime() <= start_date.getTime();
+					return exerciseDate.getTime() >= start_date.getTime() && exerciseDate.getTime() <= end_date.getTime();
 				});
 			}
 
